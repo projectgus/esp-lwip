@@ -751,13 +751,14 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
 static void
 tcp_timewait_input(struct tcp_pcb *pcb)
 {
-  /* RFC 1337: in TIME_WAIT, ignore RST and ACK FINs + any 'acceptable' segments */
   /* RFC 793 3.9 Event Processing - Segment Arrives:
    * - first check sequence number - we skip that one in TIME_WAIT (always
    *   acceptable since we only send ACKs)
    * - second check the RST bit (... return) */
   if (flags & TCP_RST) {
-    return;
+      /* HACK: Violate RFC 1337 by causing the RST to end the TIME-WAIT */
+      tcp_abort(pcb);
+      return;
   }
 
   LWIP_ASSERT("tcp_timewait_input: invalid pcb", pcb != NULL);
